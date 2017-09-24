@@ -86,18 +86,91 @@ def depthFirstSearch(problem):
     print "Is the start a goal?", problem.isGoalState(problem.getStartState())
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # Depth First Search uses a stack
+
+    visited = []  # Our stack
+    checked = []
+    present_state = problem.getStartState()
+    node = (present_state, [])
+    visited.append(node)
+
+    while len(visited) > 0:  # Checking if the stack is empty
+        node = visited.pop()  # Getting the last added node
+        if node[0] not in checked:
+            checked.append(node[0])
+            if problem.isGoalState(node[0]):
+                return node[1]
+            for neighbor, order, cost in problem.getSuccessors(node[0]):
+                next_path = node[1] + [order]
+                added_node = (neighbor, next_path)
+                visited.append(added_node)
+
+    return None
+
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    visited = []  # Queue for nodes for actual path
+    checked = []  # Stack for neighbor nodes for cross checking
+
+    present_state = problem.getStartState()
+    node = (present_state, [])
+    visited.insert(0, node)
+
+    while len(visited) > 0:
+        node = visited.pop()
+        if problem.isGoalState(node[0]):
+            return node[1]
+        neighbors = problem.getSuccessors(node[0])
+        checked.append(node[0])
+        rev = range(0, len(neighbors))
+        rev.reverse()
+        for each in rev:
+            neighbor = neighbors[each]
+            if neighbor[0] not in checked:
+                next_path = node[1] + [neighbor[1]]
+                added_node = (neighbor[0], next_path)
+                visited.insert(0, added_node)
+                checked.append(neighbor[0])
+
+    return None
+
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    visited = util.PriorityQueue()
+    checked = set([])
+    cost_dict = {}
+    seen = []
+    initial_state = problem.getStartState()
+    initial_state_neighbors = problem.getSuccessors(initial_state)
+    neighbor_dict = {initial_state: initial_state_neighbors}
+
+    for neighbor, order, cost in initial_state_neighbors:
+        visited.push((neighbor, [order], cost), cost)
+        cost_dict[neighbor] = cost
+        checked.add((neighbor, order, cost))
+
+    seen.append(problem.getStartState())
+
+    while not visited.isEmpty():
+        neighbor, order, cost = visited.pop()
+        if problem.isGoalState(neighbor):
+            return order
+        seen.append(neighbor)
+        if neighbor not in neighbor_dict.keys():
+            neighbor_dict[neighbor] = problem.getSuccessors(neighbor)
+        for child_neighbor, child_order, child_cost in neighbor_dict[neighbor]:
+            cost_func = cost + child_cost
+            valid_child = ((child_neighbor, child_order, child_cost) not in checked) and (child_neighbor not in seen)
+            if valid_child:
+                cost_dict[child_neighbor] = cost_func
+                visited.push((child_neighbor, order + [child_order], cost + child_cost), cost_func)
+                checked.add((child_neighbor, child_order, child_cost))
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -106,10 +179,40 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
+
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    visited = util.PriorityQueue()
+    checked = set([])
+    cost_dict = {}
+    seen = []
+    initial_state = problem.getStartState()
+    initial_state_neighbors = problem.getSuccessors(initial_state)
+    neighbor_dict = {initial_state: initial_state_neighbors}
+
+    for neighbor, order, cost in initial_state_neighbors:
+        cost_func = cost + heuristic(neighbor, problem)
+        visited.push((neighbor, [order], cost), cost_func)
+        cost_dict[neighbor] = cost_func
+        checked.add((neighbor, order, cost))
+
+    seen.append(problem.getStartState())
+
+    while not visited.isEmpty():
+        neighbor, order, cost = visited.pop()
+        if problem.isGoalState(neighbor):
+            return order
+        seen.append(neighbor)
+        if neighbor not in neighbor_dict.keys():
+            neighbor_dict[neighbor] = problem.getSuccessors(neighbor)
+        for child_neighbor, child_order, child_cost in neighbor_dict[neighbor]:
+            cost_func = cost + child_cost + heuristic(child_neighbor, problem)
+            valid_child = ((child_neighbor, child_order, child_cost) not in checked) and (child_neighbor not in seen)
+            if valid_child:
+                cost_dict[child_neighbor] = cost_func
+                visited.push((child_neighbor, order+[child_order], cost + child_cost), cost_func)
+                checked.add((child_neighbor, child_order, child_cost))
 
 
 # Abbreviations
