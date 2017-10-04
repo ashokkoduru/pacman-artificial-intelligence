@@ -157,7 +157,61 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        self.agent_count = gameState.getNumAgents()
+
+        if self.depth == 0:
+            return float('inf')
+
+        neg_infinity = float('-inf')
+        possible_actions = gameState.getLegalActions(0)
+        if len(possible_actions) == 0:
+            return self.evaluationFunction()
+
+        for each in possible_actions:
+            next_man = gameState.generateSuccessor(0, each)
+            temp_min = self.get_minimum_food(next_man, self.depth, 1)
+            if temp_min >= neg_infinity:
+                best_move = each
+                neg_infinity = temp_min
+
+        return best_move
+
+    def get_minimum_food(self, state, depth, agent_index):
+        if depth == 0:
+            return self.evaluationFunction(state)
+
+        final_min = float('inf')
+        possible_actions = state.getLegalActions(agent_index)
+        if len(possible_actions) == 0:
+            return self.evaluationFunction(state)
+
+        for each in possible_actions:
+            next_man = state.generateSuccessor(agent_index, each)
+            if agent_index + 1 == self.agent_count:
+                temp_food = self.get_maximum_food(next_man, depth-1)
+            else:
+                temp_food = self.get_minimum_food(next_man, depth, agent_index+1)
+            final_min = min(final_min, temp_food)
+        return final_min
+
+    def get_maximum_food(self, state, depth):
+        if depth == 0:
+            return self.evaluationFunction(state)
+
+        final_max = float('-inf')
+        possible_actions = state.getLegalActions(0)
+        if len(possible_actions) == 0:
+            return self.evaluationFunction(state)
+
+        for each in possible_actions:
+            next_man = state.generateSuccessor(0, each)
+            temp_food = self.get_minimum_food(next_man, depth, 1)
+            final_max = max(final_max, temp_food)
+
+        return final_max
+
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -169,7 +223,71 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.agent_count = gameState.getNumAgents()
+
+        alpha = float('-inf')
+        beta = float('inf')
+
+        if self.depth == 0:
+            return float('inf')
+
+        best_move = Directions.STOP
+        neg_infinity = float('-inf')
+        possible_actions = gameState.getLegalActions(0)
+        if len(possible_actions) == 0:
+            return self.evaluationFunction()
+
+        for each in possible_actions:
+            next_man = gameState.generateSuccessor(0, each)
+            temp_min = self.get_minimum_food(next_man, self.depth, alpha, beta, 1)
+            if temp_min >= neg_infinity:
+                best_move = each
+                neg_infinity = temp_min
+            if neg_infinity > beta:
+                return neg_infinity
+            alpha = max(alpha, neg_infinity)
+        return best_move
+
+    def get_minimum_food(self, state, depth, alpha, beta, agent_index):
+        if depth == 0:
+            return self.evaluationFunction(state)
+
+        final_min = float('inf')
+        possible_actions = state.getLegalActions(agent_index)
+        if len(possible_actions) == 0:
+            return self.evaluationFunction(state)
+
+        for each in possible_actions:
+            next_man = state.generateSuccessor(agent_index, each)
+            if agent_index + 1 == self.agent_count:
+                temp_food = self.get_maximum_food(next_man, depth-1, alpha, beta)
+            else:
+                temp_food = self.get_minimum_food(next_man, depth, alpha, beta, agent_index+1)
+            final_min = min(final_min, temp_food)
+            if alpha > final_min:
+                return final_min
+            beta = min(beta, final_min)
+
+        return final_min
+
+    def get_maximum_food(self, state, depth, alpha, beta):
+        if depth == 0:
+            return self.evaluationFunction(state)
+
+        final_max = float('-inf')
+        possible_actions = state.getLegalActions(0)
+        if len(possible_actions) == 0:
+            return self.evaluationFunction(state)
+
+        for each in possible_actions:
+            next_man = state.generateSuccessor(0, each)
+            temp_food = self.get_minimum_food(next_man, depth, alpha, beta, 1)
+            final_max = max(final_max, temp_food)
+            if beta < final_max:
+                return final_max
+            alpha = max(final_max, alpha)
+
+        return final_max
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
@@ -184,7 +302,64 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.agent_count = gameState.getNumAgents()
+
+        if self.depth == 0:
+            return float('inf')
+
+        neg_infinity = float('-inf')
+        possible_actions = gameState.getLegalActions(0)
+        best_move = Directions.STOP
+        if len(possible_actions) == 0:
+            return self.evaluationFunction()
+
+        for each in possible_actions:
+            next_man = gameState.generateSuccessor(0, each)
+            temp_min = self.get_minimum_food(next_man, self.depth, 1)
+            if temp_min > neg_infinity:
+                best_move = each
+                neg_infinity = temp_min
+
+        return best_move
+
+    def get_minimum_food(self, state, depth, agent_index):
+        if depth == 0:
+            return self.evaluationFunction(state)
+
+        possible_actions = state.getLegalActions(agent_index)
+        if len(possible_actions) == 0:
+            return self.evaluationFunction(state)
+
+        final_sum = 0
+        final_count = 0
+
+        for each in possible_actions:
+            next_man = state.generateSuccessor(agent_index, each)
+            if agent_index + 1 == self.agent_count:
+                temp_food = self.get_maximum_food(next_man, depth-1)
+            else:
+                temp_food = self.get_minimum_food(next_man, depth, agent_index+1)
+            final_sum += temp_food
+            final_count += 1
+
+        return final_sum/final_count
+
+    def get_maximum_food(self, state, depth):
+        if depth == 0:
+            return self.evaluationFunction(state)
+
+        final_max = float('-inf')
+        possible_actions = state.getLegalActions(0)
+        if len(possible_actions) == 0:
+            return self.evaluationFunction(state)
+
+        for each in possible_actions:
+            next_man = state.generateSuccessor(0, each)
+            temp_food = self.get_minimum_food(next_man, depth, 1)
+            final_max = max(final_max, temp_food)
+
+        return final_max
+
 
 def betterEvaluationFunction(currentGameState):
     """
