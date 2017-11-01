@@ -1,0 +1,5 @@
+#1 . The evaluation function always takes the next possible state in to account with respect to searching for the ghosts or the food. So for every possible position of the ghost it iteratively compares it the possible position of the available foods and computes the total score bases on the next possible move
+
+If the current move is the best possible move then it skips checking for the ghost and continues for that best move. The only change in Q5 is the taking the current state instead of the next state which changes the semantic of the ghost search because it need search for the best move. 
+
+The time spent on this assignment is approximately 6 hours.
