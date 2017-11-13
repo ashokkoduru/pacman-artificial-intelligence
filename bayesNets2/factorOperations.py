@@ -101,7 +101,33 @@ def joinFactors(factors):
 
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    to_find = set()
+    known = set()
+    var_dict = {}
+
+    for each in factors:
+        for each_var in each.unconditionedVariables():
+            if each_var in known:
+                known.remove(each_var)
+            to_find.add(each_var)
+            var_dict[each_var] = each.variableDomainsDict()[each_var]
+
+        for each_var in each.conditionedVariables():
+            if each_var not in to_find:
+                known.add(each_var)
+                var_dict[each_var] = each.variableDomainsDict()[each_var]
+
+    next_factor = Factor(to_find, known, var_dict)
+    possible_assignments = next_factor.getAllPossibleAssignmentDicts()
+
+    for each in possible_assignments:
+        total_prob = float(1)
+        for f in factors:
+            prob = f.getProbability(each)
+            total_prob *= prob
+        next_factor.setProbability(each, total_prob)
+
+    return next_factor
 
 
 def eliminateWithCallTracking(callTrackingList=None):
@@ -150,7 +176,28 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        unc_vars = factor.unconditionedVariables()
+        unc_vars.remove(eliminationVariable)
+        c_vars = factor.conditionedVariables()
+        var_dict = factor.variableDomainsDict()
+
+        next_factor = Factor(unc_vars, c_vars, var_dict)
+        possible_assignments = factor.getAllPossibleAssignmentDicts()
+
+        var_dict_alt = {}
+        for each in possible_assignments:
+            probability = factor.getProbability(each)
+            del each[eliminationVariable]
+            m = tuple(sorted(each.items()))
+
+            if m not in var_dict_alt:
+                var_dict_alt[m] = 0
+            var_dict_alt[m] += probability
+
+        for other_each in var_dict_alt:
+            each = dict(other_each)
+            next_factor.setProbability(each, var_dict_alt[other_each])
+        return next_factor
 
     return eliminate
 
@@ -205,5 +252,29 @@ def normalize(factor):
                             str(factor))
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    unc_vars = factor.unconditionedVariables()
+    c_vars = factor.conditionedVariables()
+    var_dict = factor.variableDomainsDict()
+
+    for each in list(unc_vars):
+        d = var_dict[each]
+        if len(d) == 1:
+            c_vars.add(each)
+            unc_vars.remove(each)
+
+    next_factor = Factor(unc_vars, c_vars, var_dict)
+    possible_assignments = factor.getAllPossibleAssignmentDicts()
+
+    total_prob = 0
+    for each in possible_assignments:
+        total_prob += factor.getProbability(each)
+
+    if total_prob == 0:
+        return None
+
+    for each in possible_assignments:
+        old_prob = factor.getProbability(each)
+        next_factor.setProbability(each, old_prob/total_prob)
+
+    return next_factor
 
